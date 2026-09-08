@@ -22,7 +22,51 @@ ${INJECTION_MARKER}
       return text.replace(trimmed, dictionary[trimmed]);
     }
 
-    // 2. 常见动态带数字/参数的模式匹配
+    // 2. 动态带参数/数字的模式匹配
+
+    // "Subagents" / "Subagents 0"
+    const subagentsMatch = /^Subagents(?:\\s+(\\d+))?$/i.exec(trimmed);
+    if (subagentsMatch) {
+      return text.replace(trimmed, subagentsMatch[1] !== undefined ? \`子 Agent \${subagentsMatch[1]}\` : '子 Agent');
+    }
+
+    // "Files Changed" / "Files Changed 17"
+    const filesChangedHeaderMatch = /^Files Changed(?:\\s+(\\d+))?$/i.exec(trimmed);
+    if (filesChangedHeaderMatch) {
+      return text.replace(trimmed, filesChangedHeaderMatch[1] !== undefined ? \`修改的文件 \${filesChangedHeaderMatch[1]}\` : '修改的文件');
+    }
+
+    // "Artifacts" / "Artifacts 26"
+    const artifactsMatch = /^Artifacts(?:\\s+(\\d+))?$/i.exec(trimmed);
+    if (artifactsMatch) {
+      return text.replace(trimmed, artifactsMatch[1] !== undefined ? \`产物 \${artifactsMatch[1]}\` : '产物');
+    }
+
+    // "Background Tasks" / "Background Tasks 0"
+    const bgTasksMatch = /^Background Tasks(?:\\s+(\\d+))?$/i.exec(trimmed);
+    if (bgTasksMatch) {
+      return text.replace(trimmed, bgTasksMatch[1] !== undefined ? \`后台任务 \${bgTasksMatch[1]}\` : '后台任务');
+    }
+
+    // "Skills Used" / "Skills Used 1"
+    const skillsUsedMatch = /^Skills Used(?:\\s+(\\d+))?$/i.exec(trimmed);
+    if (skillsUsedMatch) {
+      return text.replace(trimmed, skillsUsedMatch[1] !== undefined ? \`所用技能 \${skillsUsedMatch[1]}\` : '所用技能');
+    }
+
+    // "Ran 3 commands" / "Ran 1 command"
+    const ranCommandsMatch = /^Ran\\s+(\\d+)\\s+commands?$/i.exec(trimmed);
+    if (ranCommandsMatch) {
+      return text.replace(trimmed, \`运行了 \${ranCommandsMatch[1]} 条命令\`);
+    }
+
+    // "Media (Today 7:33 AM)" / "Media (Yesterday ...)"
+    const mediaMatch = /^Media\\s+\\((.+)\\)$/i.exec(trimmed);
+    if (mediaMatch) {
+      let timeStr = mediaMatch[1].replace(/Today/gi, '今天').replace(/Yesterday/gi, '昨天');
+      return text.replace(trimmed, \`媒体 (\${timeStr})\`);
+    }
+
     // "See all (9)"
     const seeAllMatch = /^See all \\((\\d+)\\)$/i.exec(trimmed);
     if (seeAllMatch) {
