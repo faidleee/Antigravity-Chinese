@@ -7,7 +7,6 @@
     "start": "node src/cli.js install",
     "install-patch": "node src/cli.js install",
     "restore": "node src/cli.js restore",
-    "collect": "node src/cli.js collect",
     "test": "node test/translate.test.js"
   },
   "keywords": [

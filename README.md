@@ -10,7 +10,7 @@
 - **沙盒安全兼容**：纯 JavaScript DOM 运行时动态拦截，深度支持 Shadow DOM 穿透与 Chromium 安全沙盒隔离。
 - **一键安装与还原**：双击即可完成安全注入或一键恢复官方原生英文版本。
 - **结构化字典**：内置 240+ 核心界面词条，支持随时在 `data/dict.json` 中扩展自定义翻译。
-- **未翻译词条收集器**：可自动提取用户在软件中触碰到的未翻译英文句子。
+- **幂等性防护**：多次安装自动替换旧补丁，绝不重复堆叠代码，不污染官方备份。
 
 ---
 
@@ -29,7 +29,6 @@ D:\Project\TranslateGemini\
 │   ├── template.js                # 注入预加载模板引擎
 │   ├── injector.js                # 核心注入与重包器
 │   ├── restorer.js                # 官方原版还原器
-│   ├── collector.js               # 词条扫描提取器
 │   └── cli.js                     # 命令行管理入口
 └── test\
     └── translate.test.js          # 自动化单元测试套件
@@ -57,13 +56,7 @@ npm run restore
 node src/cli.js restore
 ```
 
-### 3. 查看扫描未翻译词条
-如果开启过收集模式，可以运行以下命令扫描本地捕获的未翻译句子：
-```bash
-npm run collect
-```
-
-### 4. 执行单元测试
+### 3. 执行单元测试
 ```bash
 npm test
 ```
