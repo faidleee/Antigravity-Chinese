@@ -25,37 +25,37 @@ ${INJECTION_MARKER}
     // 2. 动态带参数/数字的模式匹配
 
     // "Subagents" / "Subagents 0"
-    const subagentsMatch = /^Subagents(?:\\s+(\\d+))?$/i.exec(trimmed);
+    const subagentsMatch = /^Subagents(?:\\s+(\\d+))?(?:\\s*[>›])?$/i.exec(trimmed);
     if (subagentsMatch) {
       return text.replace(trimmed, subagentsMatch[1] !== undefined ? \`子 Agent \${subagentsMatch[1]}\` : '子 Agent');
     }
 
     // "Files Changed" / "Files Changed 17"
-    const filesChangedHeaderMatch = /^Files Changed(?:\\s+(\\d+))?$/i.exec(trimmed);
+    const filesChangedHeaderMatch = /^(?:Files Changed|files changed)(?:\\s+(\\d+))?(?:\\s*[v˅>›])?$/i.exec(trimmed);
     if (filesChangedHeaderMatch) {
       return text.replace(trimmed, filesChangedHeaderMatch[1] !== undefined ? \`修改的文件 \${filesChangedHeaderMatch[1]}\` : '修改的文件');
     }
 
     // "Artifacts" / "Artifacts 26"
-    const artifactsMatch = /^Artifacts(?:\\s+(\\d+))?$/i.exec(trimmed);
+    const artifactsMatch = /^Artifacts(?:\\s+(\\d+))?(?:\\s*[>›])?$/i.exec(trimmed);
     if (artifactsMatch) {
       return text.replace(trimmed, artifactsMatch[1] !== undefined ? \`产物 \${artifactsMatch[1]}\` : '产物');
     }
 
     // "Background Tasks" / "Background Tasks 0"
-    const bgTasksMatch = /^Background Tasks(?:\\s+(\\d+))?$/i.exec(trimmed);
+    const bgTasksMatch = /^Background Tasks(?:\\s+(\\d+))?(?:\\s*[>›])?$/i.exec(trimmed);
     if (bgTasksMatch) {
       return text.replace(trimmed, bgTasksMatch[1] !== undefined ? \`后台任务 \${bgTasksMatch[1]}\` : '后台任务');
     }
 
     // "Skills Used" / "Skills Used 1"
-    const skillsUsedMatch = /^Skills Used(?:\\s+(\\d+))?$/i.exec(trimmed);
+    const skillsUsedMatch = /^Skills Used(?:\\s+(\\d+))?(?:\\s*[>›])?$/i.exec(trimmed);
     if (skillsUsedMatch) {
       return text.replace(trimmed, skillsUsedMatch[1] !== undefined ? \`所用技能 \${skillsUsedMatch[1]}\` : '所用技能');
     }
 
     // "Ran 3 commands" / "Ran 1 command"
-    const ranCommandsMatch = /^Ran\\s+(\\d+)\\s+commands?$/i.exec(trimmed);
+    const ranCommandsMatch = /^Ran\\s+(\\d+)\\s+commands?(?:\\s*[>›])?$/i.exec(trimmed);
     if (ranCommandsMatch) {
       return text.replace(trimmed, \`运行了 \${ranCommandsMatch[1]} 条命令\`);
     }
@@ -80,13 +80,13 @@ ${INJECTION_MARKER}
     }
 
     // "Worked for 39s" / "Worked for 1m"
-    const workedForMatch = /^Worked for\\s+(.+)$/i.exec(trimmed);
+    const workedForMatch = /^Worked for\\s+(.+?)(?:\\s*[v˅>›])?$/i.exec(trimmed);
     if (workedForMatch) {
       return text.replace(trimmed, \`耗时 \${workedForMatch[1]}\`);
     }
 
     // "Thought for 2s"
-    const thoughtForMatch = /^Thought for\\s+(.+)$/i.exec(trimmed);
+    const thoughtForMatch = /^Thought for\\s+(.+?)(?:\\s*[v˅>›])?$/i.exec(trimmed);
     if (thoughtForMatch) {
       return text.replace(trimmed, \`思考了 \${thoughtForMatch[1]}\`);
     }

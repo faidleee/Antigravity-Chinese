@@ -70,6 +70,33 @@ function 测试_命令行执行环境自检() {
   console.log('  ✔ [测试_命令行执行环境自检] 通过');
 }
 
+function 测试_动态模式与高频界面词条匹配() {
+  const dictPath = path.join(__dirname, '..', 'data', 'dict.json');
+  const dict = JSON.parse(fs.readFileSync(dictPath, 'utf8'));
+
+  // 必须覆盖的词条
+  const requiredTerms = [
+    'files changed', 'Worked for', 'Review', 'Edited', 'Learn more about',
+    'Commands', 'See less', 'Inherits your General settings when working in this project.',
+    'Allow', 'Deny', 'Always Allow', 'Always Deny', 'Ask', 'Block',
+    'Also includes global settings when working in this project. Learn more.',
+    'global settings', 'General settings', 'Learn more', 'Inherits your'
+  ];
+
+  for (const term of requiredTerms) {
+    assert.ok(dict[term], `字典中必须包含关键词条: "${term}"`);
+  }
+
+  // 验证注入模板对动态模式的提取与替换逻辑
+  const script = generateInjectionScript(dict);
+  assert.ok(script.includes('Subagents'), '脚本应包含 Subagents 动态匹配规则');
+  assert.ok(script.includes('Files Changed'), '脚本应包含 Files Changed 动态匹配规则');
+  assert.ok(script.includes('Ran'), '脚本应包含 Ran 命令条数匹配规则');
+  assert.ok(script.includes('Worked for'), '脚本应包含 Worked for 耗时匹配规则');
+  assert.ok(script.includes('Thought for'), '脚本应包含 Thought for 思考匹配规则');
+  console.log('  ✔ [测试_动态模式与高频界面词条匹配] 通过');
+}
+
 // 执行所有测试函数
 function 运行全部测试() {
   console.log('\n--- 开始执行 TranslateGemini 自动化单元测试 ---');
@@ -79,7 +106,8 @@ function 运行全部测试() {
     测试_字典键值有效性与无空白异常,
     测试_路径自动探测逻辑,
     测试_注入模板代码生成有效性,
-    测试_命令行执行环境自检
+    测试_命令行执行环境自检,
+    测试_动态模式与高频界面词条匹配
   ];
 
   for (const testFn of testSuite) {
