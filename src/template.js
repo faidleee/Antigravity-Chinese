@@ -17,15 +17,40 @@ ${INJECTION_MARKER}
     const trimmed = text.trim();
     if (!trimmed) return text;
 
-    // 严格全词字典匹配
+    // 1. 严格全词字典匹配
     if (dictionary[trimmed]) {
       return text.replace(trimmed, dictionary[trimmed]);
     }
 
-    // 动态模式匹配（如 "See all (9)"）
+    // 2. 常见动态带数字/参数的模式匹配
+    // "See all (9)"
     const seeAllMatch = /^See all \\((\\d+)\\)$/i.exec(trimmed);
     if (seeAllMatch) {
       return text.replace(trimmed, \`查看全部 (\${seeAllMatch[1]})\`);
+    }
+
+    // "1 file changed" / "3 files changed"
+    const filesChangedMatch = /^(\\d+)\\s+files?\\s+changed$/i.exec(trimmed);
+    if (filesChangedMatch) {
+      return text.replace(trimmed, \`\${filesChangedMatch[1]} 个文件已修改\`);
+    }
+
+    // "Worked for 39s" / "Worked for 1m"
+    const workedForMatch = /^Worked for\\s+(.+)$/i.exec(trimmed);
+    if (workedForMatch) {
+      return text.replace(trimmed, \`耗时 \${workedForMatch[1]}\`);
+    }
+
+    // "Thought for 2s"
+    const thoughtForMatch = /^Thought for\\s+(.+)$/i.exec(trimmed);
+    if (thoughtForMatch) {
+      return text.replace(trimmed, \`思考了 \${thoughtForMatch[1]}\`);
+    }
+
+    // "Learn more about Default"
+    const learnMoreMatch = /^Learn more about\\s+(.+)$/i.exec(trimmed);
+    if (learnMoreMatch) {
+      return text.replace(trimmed, \`了解关于 \${learnMoreMatch[1]} 的更多信息\`);
     }
 
     return text;
