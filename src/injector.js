@@ -27,15 +27,7 @@ function installPatch(customDictPath) {
   const termCount = Object.keys(dictionary).length;
   console.log(`[TranslateGemini] 已加载字典：包含 ${termCount} 个精准词条`);
 
-  // 1. 创建备份
-  if (!paths.hasBackup) {
-    console.log(`[TranslateGemini] 创建原生备份 -> ${paths.backupAsarPath}`);
-    fs.copyFileSync(paths.asarPath, paths.backupAsarPath);
-  } else {
-    console.log(`[TranslateGemini] 检查到已有原生备份：${paths.backupAsarPath}`);
-  }
-
-  // 2. 解包
+  // 1. 解包到临时目录
   const extractedDir = path.join(paths.resourcesDir, 'app_extracted_patch');
   if (fs.existsSync(extractedDir)) {
     fs.rmSync(extractedDir, { recursive: true, force: true });
@@ -44,7 +36,6 @@ function installPatch(customDictPath) {
   console.log('[TranslateGemini] 正在解包 app.asar...');
   execSync(`npx asar extract "${paths.asarPath}" "${extractedDir}"`, { stdio: 'pipe' });
 
-  // 3. 注入 preload.js
   const preloadFile = path.join(extractedDir, 'dist', 'preload.js');
   if (!fs.existsSync(preloadFile)) {
     fs.rmSync(extractedDir, { recursive: true, force: true });
@@ -52,6 +43,16 @@ function installPatch(customDictPath) {
   }
 
   let content = fs.readFileSync(preloadFile, 'utf8');
+
+  // 如果当前尚未打过补丁且尚未备份，则立即创建纯净的原版备份
+  if (!content.includes(INJECTION_MARKER) && !paths.hasBackup) {
+    console.log(`[TranslateGemini] 检测到原生官方版本，创建纯正备份 -> ${paths.backupAsarPath}`);
+    fs.copyFileSync(paths.asarPath, paths.backupAsarPath);
+  } else if (paths.hasBackup) {
+    console.log(`[TranslateGemini] 检查到已有原生备份：${paths.backupAsarPath}`);
+  }
+
+  // 2. 清理旧补丁，追加新补丁
   if (content.includes(INJECTION_MARKER)) {
     content = content.split(INJECTION_MARKER)[0].trim();
   }
@@ -61,11 +62,11 @@ function installPatch(customDictPath) {
   fs.writeFileSync(preloadFile, content, 'utf8');
   console.log('[TranslateGemini] 汉化脚本与严格字典已注入到 preload.js');
 
-  // 4. 重新打包
+  // 3. 重新打包
   console.log('[TranslateGemini] 正在重新打包 app.asar...');
   execSync(`npx asar pack "${extractedDir}" "${paths.asarPath}"`, { stdio: 'pipe' });
 
-  // 5. 清理临时解包目录
+  // 4. 清理临时解包目录
   fs.rmSync(extractedDir, { recursive: true, force: true });
   console.log('[TranslateGemini] 临时目录已清理，注入打包完成！');
 
