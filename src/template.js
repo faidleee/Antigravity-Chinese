@@ -10,7 +10,14 @@ function generateInjectionScript(dictionary) {
   return `
 ${INJECTION_MARKER}
 (function() {
+  if (typeof window !== 'undefined' && window.__ANTIGRAVITY_CHINESE_INJECTED__) return;
+  if (typeof window !== 'undefined') {
+    window.__ANTIGRAVITY_CHINESE_INJECTED__ = true;
+  }
+
   const dictionary = ${dictJson};
+  const skipCache = new WeakMap();
+  const translatedNodes = new WeakSet();
 
   function translateText(text) {
     if (!text || typeof text !== 'string') return text;
@@ -100,85 +107,194 @@ ${INJECTION_MARKER}
     return text;
   }
 
-  // 免疫检测：判断节点是否处于可编辑区域、输入框或代码块中
+  // 精准匹配代码编辑器、控制台与语法高亮类名
+  const codeClassPattern = /(?:^|[\\s_-])(monaco-editor|editor-instance|hljs|shiki|prism|codemirror|line-content|gutter|codeblock|code-block|code-line|view-line|view-lines|xterm|terminal)(?:$|[\\s_-])/i;
+
+  // 提及菜单 (@ Mentions) 分类白名单
+  const MENTION_CATEGORIES = new Set([
+    'Rules', '规则', 'Conversation', '对话', 'PDF Document', 'PDF 文档',
+    'MCP Resource', 'MCP 资源', 'Browser Page', '浏览器页面', 'Browser Text', '浏览器文本',
+    'Directory', '目录', 'Git Commit', 'Git 提交', 'Git Diff', 'Git 差异'
+  ]);
+
+  // 全层级免疫检测：严禁误杀用户输入框、用户提问气泡、思考链正文与代码块
   function isIgnoredNode(node) {
-    if (!node) return false;
-    let el = node.nodeType === 1 ? node : node.parentElement;
+    if (!node) return true;
+    const el = node.nodeType === 1 ? node : node.parentElement;
     if (!el) return false;
 
-    while (el && el !== document.body) {
-      // 1. 占位提示元素例外：若显式包含 placeholder，不跳过
-      const className = typeof el.className === 'string' ? el.className : (el.className && el.className.baseVal ? el.className.baseVal : '');
-      if (className && className.toLowerCase().includes('placeholder')) {
+    // 1. WeakMap 记忆化缓存查询
+    if (skipCache.has(el)) {
+      return skipCache.get(el);
+    }
+
+    // 2. 占位提示元素例外：若显式包含 placeholder，放行汉化
+    const className = typeof el.className === 'string' ? el.className : (el.className && el.className.baseVal ? el.className.baseVal : '');
+    if (className && className.toLowerCase().includes('placeholder')) {
+      skipCache.set(el, false);
+      return false;
+    }
+
+    // 3. 基础不可翻译标签（脚本、样式、按键标签、代码、输入控件）
+    const tag = el.tagName ? el.tagName.toUpperCase() : '';
+    const skipTags = ['SCRIPT', 'STYLE', 'NOSCRIPT', 'KBD', 'SAMP', 'VAR', 'CODE', 'PRE', 'INPUT', 'TEXTAREA'];
+    if (skipTags.includes(tag)) {
+      // 特例放行：步骤执行药丸（Ran, Explored, Edited, Viewed, Thought, Thinking, Working 等）且不在用户提问气泡内
+      const textContent = (el.innerText || el.textContent || '').trim();
+      const isActionPill = textContent.length <= 25 && /^(Explored|Ran|Viewed|Edited|Thought|Thinking|Working)$/i.test(textContent);
+      if (isActionPill) {
+        let inUserBubble = false;
+        let p = el;
+        while (p && p !== document.body) {
+          if (p.classList && (p.classList.contains('group/user-input-step') || p.classList.contains('user-message'))) {
+            inUserBubble = true;
+            break;
+          }
+          p = p.parentElement;
+        }
+        if (!inUserBubble) {
+          skipCache.set(el, false);
+          return false;
+        }
+      }
+      skipCache.set(el, true);
+      return true;
+    }
+
+    // 4. 特殊放行：折叠栏/思考触发按钮（如 "Thought for 4s"）必须放行汉化
+    const isThinkingTrigger = el.closest && el.closest('button[data-testid="thinking-collapsible-trigger"]');
+    if (isThinkingTrigger) {
+      skipCache.set(el, false);
+      return false;
+    }
+
+    // 5. 核心保护：斜杠命令与提及建议菜单的触发词标签（保持 /boost 等命令标识原样）
+    const isMenuOptionLabel = el.closest && el.closest('[data-testid="menu-option-label"]');
+    if (isMenuOptionLabel) {
+      const labelText = (isMenuOptionLabel.innerText || isMenuOptionLabel.textContent || '').trim();
+      if (MENTION_CATEGORIES.has(labelText)) {
+        skipCache.set(el, false);
         return false;
       }
+      skipCache.set(el, true);
+      return true;
+    }
 
-      // 2. 常见不可翻译标签（脚本、样式、输入控件、代码块）
-      const tag = el.tagName ? el.tagName.toUpperCase() : '';
-      if (['INPUT', 'TEXTAREA', 'SCRIPT', 'STYLE', 'CODE', 'PRE'].includes(tag)) {
-        return true;
+    // 6. 向上递归检查祖先节点
+    let cur = el;
+    let shouldSkip = false;
+    while (cur && cur !== document.body) {
+      if (skipCache.has(cur)) {
+        shouldSkip = skipCache.get(cur);
+        break;
       }
 
-      // 3. 富文本可编辑区（聊天输入框 contenteditable="true" 或包含 isContentEditable）
-      if (el.isContentEditable || (el.getAttribute && (el.getAttribute('contenteditable') === 'true' || el.getAttribute('contenteditable') === ''))) {
-        return true;
+      // A. 绝对核心防御：用户输入与提问气泡（用户发送的消息内容属于用户业务数据，绝对原样保留）
+      if (cur.classList && (
+        cur.classList.contains('group/user-input-step') ||
+        cur.classList.contains('user-message') ||
+        cur.classList.contains('user-turn') ||
+        cur.classList.contains('user-query') ||
+        cur.classList.contains('user-bubble') ||
+        cur.classList.contains('chat-bubble-user') ||
+        cur.classList.contains('cursor-edit') ||
+        cur.classList.contains('cursor-text') ||
+        cur.classList.contains('input-area') ||
+        cur.classList.contains('chat-input')
+      )) {
+        shouldSkip = true;
+        break;
       }
 
-      // 4. 无障碍可编辑区域
-      if (el.getAttribute && el.getAttribute('role') === 'textbox') {
-        return true;
+      // B. 核心防御：富文本可编辑区（聊天输入框正在输入时绝对原样保留）
+      if (cur.isContentEditable || (cur.getAttribute && (
+        cur.getAttribute('contenteditable') === 'true' ||
+        cur.getAttribute('contenteditable') === '' ||
+        cur.getAttribute('role') === 'textbox' ||
+        cur.getAttribute('data-lexical-editor') === 'true'
+      ))) {
+        shouldSkip = true;
+        break;
       }
 
-      // 5. Monaco 代码编辑器、终端控制台及代码行
-      if (className) {
-        const lowerClass = className.toLowerCase();
-        if (
-          lowerClass.includes('monaco-editor') ||
-          lowerClass.includes('view-lines') ||
-          lowerClass.includes('view-line') ||
-          lowerClass.includes('xterm') ||
-          lowerClass.includes('terminal')
-        ) {
-          return true;
+      // C. 核心防御：AI 思考链展开正文容器（思考链自由推理流保持原文）
+      if (cur.classList && (
+        cur.classList.contains('thought-content') ||
+        cur.classList.contains('thinking-content') ||
+        cur.classList.contains('thought-box')
+      )) {
+        shouldSkip = true;
+        break;
+      }
+      if (cur.parentElement && cur.parentElement.querySelector) {
+        const trigger = cur.parentElement.querySelector(':scope > button[data-testid="thinking-collapsible-trigger"]');
+        if (trigger && cur !== trigger && !trigger.contains(cur)) {
+          shouldSkip = true;
+          break;
         }
       }
 
-      el = el.parentElement || (el.parentNode && el.parentNode.host ? el.parentNode.host : null);
+      // D. 代码块、编辑器、终端、高亮容器
+      if (cur.getAttribute && (
+        cur.getAttribute('data-language') ||
+        cur.getAttribute('data-code') ||
+        cur.getAttribute('data-line') ||
+        cur.getAttribute('data-line-number') ||
+        cur.getAttribute('role') === 'code'
+      )) {
+        shouldSkip = true;
+        break;
+      }
+
+      const curTag = cur.tagName ? cur.tagName.toUpperCase() : '';
+      if (['PRE', 'CODE'].includes(curTag)) {
+        shouldSkip = true;
+        break;
+      }
+
+      if (cur.className && typeof cur.className === 'string') {
+        if (codeClassPattern.test(cur.className)) {
+          shouldSkip = true;
+          break;
+        }
+      }
+
+      cur = cur.parentElement || (cur.parentNode && cur.parentNode.host ? cur.parentNode.host : null);
     }
-    return false;
+
+    skipCache.set(el, shouldSkip);
+    return shouldSkip;
   }
 
   function translateNode(node) {
     if (!node) return;
+    if (isIgnoredNode(node)) return;
 
     if (node.nodeType === 3) { // 文本节点
-      // 如果属于输入区、代码区，严格禁止翻译
-      if (isIgnoredNode(node)) return;
-
+      if (translatedNodes.has(node)) return;
       const val = node.nodeValue;
       if (val) {
         const newVal = translateText(val);
         if (newVal !== val) {
           node.nodeValue = newVal;
+          translatedNodes.add(node);
+        } else if (!/[a-zA-Z]/.test(val)) {
+          translatedNodes.add(node);
         }
       }
     } else if (node.nodeType === 1) { // 元素节点
-      // 先翻译 placeholder 与 title 属性（这些是 UI 提示信息）
-      if (node.placeholder) {
-        const newPh = translateText(node.placeholder);
-        if (newPh !== node.placeholder) {
-          node.placeholder = newPh;
+      // 先翻译 placeholder、title 与 aria-label 属性（这些是 UI 提示信息）
+      ['placeholder', 'title', 'aria-label'].forEach(attr => {
+        if (node.hasAttribute && node.hasAttribute(attr)) {
+          const original = node.getAttribute(attr);
+          if (original) {
+            const translated = translateText(original);
+            if (original !== translated) {
+              node.setAttribute(attr, translated);
+            }
+          }
         }
-      }
-      if (node.title) {
-        const newTitle = translateText(node.title);
-        if (newTitle !== node.title) {
-          node.title = newTitle;
-        }
-      }
-
-      // 如果当前元素本身属于输入框、编辑区或代码块，严禁进入其子节点进行翻译
-      if (isIgnoredNode(node)) return;
+      });
 
       if (node.childNodes) {
         for (let i = 0; i < node.childNodes.length; i++) {
@@ -193,8 +309,12 @@ ${INJECTION_MARKER}
     }
   }
 
+  if (typeof window !== 'undefined') {
+    window.__antigravity_translate_node__ = translateNode;
+  }
+
   function startObserver() {
-    if (!document.body) {
+    if (typeof document === 'undefined' || !document.body) {
       setTimeout(startObserver, 50);
       return;
     }
@@ -218,10 +338,12 @@ ${INJECTION_MARKER}
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
-  if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', startObserver);
-  } else {
-    startObserver();
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', startObserver);
+    } else {
+      startObserver();
+    }
   }
 })();
 `;

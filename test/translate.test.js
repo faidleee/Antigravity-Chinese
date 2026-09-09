@@ -101,6 +101,121 @@ function 测试_动态模式与高频界面词条匹配() {
   console.log('  ✔ [测试_动态模式与高频界面词条匹配] 通过');
 }
 
+function 测试_用户对话气泡与思考链免疫() {
+  const vm = require('vm');
+  const dict = {
+    'Allow': '允许',
+    'Settings': '系统设置'
+  };
+  const script = generateInjectionScript(dict);
+
+  // 1. 静态特征断言
+  assert.ok(script.includes('group/user-input-step'), '脚本必须保护 group/user-input-step 用户提问气泡');
+  assert.ok(script.includes('user-message'), '脚本必须保护 user-message 用户消息气泡');
+  assert.ok(script.includes('thought-content'), '脚本必须保护 thought-content 思考链正文');
+  assert.ok(script.includes('skipCache'), '脚本必须包含 WeakMap 缓存加速');
+
+  // 2. 动态沙箱执行断言
+  function 创建模拟元素(tagName, attrs = {}, classes = [], parent = null) {
+    const el = {
+      nodeType: 1,
+      tagName: tagName.toUpperCase(),
+      attributes: { ...attrs },
+      classList: {
+        contains: (cls) => classes.includes(cls)
+      },
+      className: classes.join(' '),
+      parentElement: parent,
+      childNodes: [],
+      getAttribute: (attr) => attrs[attr] || null,
+      hasAttribute: (attr) => Boolean(attrs[attr]),
+      setAttribute: (attr, val) => { attrs[attr] = val; }
+    };
+    if (parent && parent.childNodes) {
+      parent.childNodes.push(el);
+    }
+    return el;
+  }
+
+  function 创建模拟文本节点(text, parent = null) {
+    const node = {
+      nodeType: 3,
+      nodeValue: text,
+      parentElement: parent
+    };
+    if (parent && parent.childNodes) {
+      parent.childNodes.push(node);
+    }
+    return node;
+  }
+
+  const mockDocument = {
+    body: 创建模拟元素('body', {}, []),
+    readyState: 'complete',
+    addEventListener: () => {}
+  };
+  const mockWindow = {
+    document: mockDocument,
+    MutationObserver: class {
+      observe() {}
+    }
+  };
+
+  const context = vm.createContext({
+    window: mockWindow,
+    document: mockDocument,
+    MutationObserver: mockWindow.MutationObserver,
+    WeakMap: WeakMap,
+    WeakSet: WeakSet,
+    Set: Set,
+    RegExp: RegExp
+  });
+
+  vm.runInContext(script, context);
+
+  const sandboxTranslate = mockWindow.__antigravity_translate_node__;
+  assert.ok(typeof sandboxTranslate === 'function', '沙箱必须成功暴露 translateNode 函数');
+
+  // 场景 1：用户提问气泡（带 group/user-input-step）中的 "Allow" 绝不应被翻译
+  const userBubble = 创建模拟元素('div', {}, ['group/user-input-step'], mockDocument.body);
+  const userText = 创建模拟文本节点('Allow', userBubble);
+  sandboxTranslate(userBubble);
+  assert.strictEqual(userText.nodeValue, 'Allow', '用户提问气泡内的英文 "Allow" 必须保持原样，不可被篡改');
+
+  // 场景 2：用户历史消息（带 user-message）中的 "Allow" 绝不应被翻译
+  const userMsg = 创建模拟元素('div', {}, ['user-message'], mockDocument.body);
+  const userMsgText = 创建模拟文本节点('Allow', userMsg);
+  sandboxTranslate(userMsg);
+  assert.strictEqual(userMsgText.nodeValue, 'Allow', '用户消息 user-message 内的 "Allow" 必须保持原样');
+
+  // 场景 3：富文本可编辑区域（contenteditable="true"）中的 "Allow" 绝不应被翻译
+  const editor = 创建模拟元素('div', { contenteditable: 'true' }, ['input-area'], mockDocument.body);
+  const editorText = 创建模拟文本节点('Allow', editor);
+  sandboxTranslate(editor);
+  assert.strictEqual(editorText.nodeValue, 'Allow', '输入框与富文本编辑区内的 "Allow" 必须保持原样');
+
+  // 场景 4：AI 思考链展开正文容器（thought-content）中的自由英文绝不应被翻译
+  const thoughtBox = 创建模拟元素('div', {}, ['thought-content'], mockDocument.body);
+  const thoughtText = 创建模拟文本节点('Thought for 2s', thoughtBox);
+  sandboxTranslate(thoughtBox);
+  assert.strictEqual(thoughtText.nodeValue, 'Thought for 2s', '思考链展开正文必须保持原样');
+
+  // 场景 5：普通 UI 按钮（非用户气泡内）中的 "Allow" 必须正确汉化为 "允许"
+  const uiBtn = 创建模拟元素('button', {}, ['ant-btn'], mockDocument.body);
+  const uiBtnText = 创建模拟文本节点('Allow', uiBtn);
+  sandboxTranslate(uiBtn);
+  assert.strictEqual(uiBtnText.nodeValue, '允许', '系统 UI 按钮中的 "Allow" 必须正确翻译为 "允许"');
+
+  // 场景 6：思考过程触发药丸按钮中的 "Thought for 2s" 必须正确汉化为 "思考了 2s"
+  const triggerBtn = 创建模拟元素('button', { 'data-testid': 'thinking-collapsible-trigger' }, [], mockDocument.body);
+  triggerBtn.closest = (sel) => sel.includes('thinking-collapsible-trigger') ? triggerBtn : null;
+  const triggerText = 创建模拟文本节点('Thought for 2s', triggerBtn);
+  sandboxTranslate(triggerBtn);
+  assert.strictEqual(triggerText.nodeValue, '思考了 2s', '思考折叠栏标题必须正确汉化为 "思考了 2s"');
+
+  console.log('  ✔ [测试_用户对话气泡与思考链免疫] 通过 (气泡/输入框保护与 UI 汉化验证全部合格)');
+}
+
 // 执行所有测试函数
 function 运行全部测试() {
   console.log('\n--- 开始执行 TranslateGemini 自动化单元测试 ---');
@@ -111,7 +226,8 @@ function 运行全部测试() {
     测试_路径自动探测逻辑,
     测试_注入模板代码生成有效性,
     测试_命令行执行环境自检,
-    测试_动态模式与高频界面词条匹配
+    测试_动态模式与高频界面词条匹配,
+    测试_用户对话气泡与思考链免疫
   ];
 
   for (const testFn of testSuite) {
