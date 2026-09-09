@@ -9,7 +9,7 @@ const { restoreOriginal } = require('./restorer');
 const command = (process.argv[2] || 'install').toLowerCase();
 
 console.log('====================================================');
-console.log('         TranslateGemini - 汉化管理系统              ');
+console.log('       Antigravity-Chinese - 汉化管理系统           ');
 console.log('====================================================\n');
 
 try {
@@ -19,7 +19,7 @@ try {
       console.log('正在执行汉化注入...');
       const res = installPatch();
       console.log(`\n🎉 汉化成功！已注入 ${res.termCount} 个精准词条。`);
-      console.log('请在任务栏右下角托盘彻底退出 Antigravity 并重新打开生效。\n');
+      console.log('已解除进程占用，直接重新打开 Antigravity 即可生效。\n');
       break;
 
     case 'restore':
@@ -27,7 +27,7 @@ try {
       console.log('正在还原官方原生版本...');
       restoreOriginal();
       console.log('\n🎉 还原成功！已恢复官方原生英文版本。');
-      console.log('请彻底退出 Antigravity 并重新打开。\n');
+      console.log('直接重新打开 Antigravity 即可。\n');
       break;
 
     default:

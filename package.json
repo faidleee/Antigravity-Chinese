@@ -1,7 +1,7 @@
 {
-  "name": "translate-gemini",
+  "name": "antigravity-chinese",
   "version": "1.0.0",
-  "description": "Google Antigravity 桌面端无歧义精准汉化补丁与自动化工具",
+  "description": "Google Antigravity 深度无歧义精准汉化补丁与自动化工具",
   "main": "src/cli.js",
   "scripts": {
     "start": "node src/cli.js install",

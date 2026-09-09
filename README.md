@@ -1,34 +1,35 @@
-# TranslateGemini - Google Antigravity 中文汉化增强工程
+# Antigravity-Chinese - Google Antigravity 深度中文汉化工具
 
-专为 **Google Antigravity 桌面端应用** 打造的无歧义精准汉化补丁与工程化工具包。
+专为 **Google Antigravity 桌面端** 打造的轻量、规范、无歧义深度汉化补丁与自动化管理工具包。
 
 ---
 
-## 🌟 项目特性
+## 🌟 核心特性
 
-- **零误伤严格匹配**：采用剥离头尾空白的全词/全句精准映射算法，杜绝正则通配造成的误伤与排版歧义。
-- **沙盒安全兼容**：纯 JavaScript DOM 运行时动态拦截，深度支持 Shadow DOM 穿透与 Chromium 安全沙盒隔离。
-- **一键安装与还原**：双击即可完成安全注入或一键恢复官方原生英文版本。
-- **结构化字典**：内置 240+ 核心界面词条，支持随时在 `data/dict.json` 中扩展自定义翻译。
-- **幂等性防护**：多次安装自动替换旧补丁，绝不重复堆叠代码，不污染官方备份。
+- **740+ 高频词条全量覆盖**：全量汉化菜单导航、系统偏好设置、Agent 行为规则、模型配额与额度、安全沙盒与权限策略、官方插件生态等核心文案。
+- **纯本地运行，零端口占用**：摒弃后台常驻 Web 服务，双击批处理脚本 2 秒极速完成解包注入与封装，干净纯粹。
+- **复合动态模式匹配**：内置独创的动态正则引擎，完美解决 `Files Changed 17 v`、`Ran 3 commands >`、`Worked for 51s` 等带数字徽章及折叠箭头的 DOM 难题。
+- **防进程占用与安全备份**：注入前自动解除进程占用，首次运行自动创建官方纯正 `app.asar.bak` 备份，支持随时一键无损还原原生英文版。
+- **独立 JSON 字典与测试护航**：数据与逻辑完全解耦，字典采用标准 `data/dict.json` 便于社区贡献 PR，配套 6 组自动化单元测试保障代码质量。
 
 ---
 
 ## 📂 项目结构
 
 ```
-D:\Project\TranslateGemini\
-├── README.md                      # 本说明文档
-├── package.json                   # Node.js 项目清单
-├── install.bat                    # 双击一键安装汉化
-├── restore.bat                    # 双击一键还原原版
+antigravity-chinese/
+├── README.md                      # 项目说明与使用指南
+├── LICENSE                        # MIT 开源许可证
+├── package.json                   # Node.js 项目配置清单
+├── install.bat                    # Windows 用户双击一键安装/更新汉化
+├── restore.bat                    # Windows 用户双击一键还原官方英文原版
 ├── data\
-│   └── dict.json                  # 标准化汉化字典 (240+ 词条)
+│   └── dict.json                  # 标准化汉化字典 (740+ 精准词条)
 ├── src\
-│   ├── config.js                  # 路径定位与自适应探测
-│   ├── template.js                # 注入预加载模板引擎
-│   ├── injector.js                # 核心注入与重包器
-│   ├── restorer.js                # 官方原版还原器
+│   ├── config.js                  # 安装路径自动定位与探测
+│   ├── template.js                # 预加载注入脚本与动态正则生成引擎
+│   ├── injector.js                # 解包、补丁追加与重包流水线
+│   ├── restorer.js                # 官方原生备份无损还原器
 │   └── cli.js                     # 命令行管理入口
 └── test\
     └── translate.test.js          # 自动化单元测试套件

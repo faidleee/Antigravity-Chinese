@@ -64,7 +64,7 @@ function 测试_命令行执行环境自检() {
   const packageJsonPath = path.join(__dirname, '..', 'package.json');
   assert.ok(fs.existsSync(packageJsonPath), 'package.json 必须存在');
   const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-  assert.strictEqual(pkg.name, 'translate-gemini', '项目名称应为 translate-gemini');
+  assert.strictEqual(pkg.name, 'antigravity-chinese', '项目名称应为 antigravity-chinese');
   assert.ok(pkg.scripts.test, '必须配置 test 测试脚本');
   assert.ok(pkg.scripts.start, '必须配置 start 启动脚本');
   console.log('  ✔ [测试_命令行执行环境自检] 通过');
