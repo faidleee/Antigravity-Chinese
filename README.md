@@ -82,3 +82,17 @@ npm test
 ## 🛡️ 安全与备份机制
 
 在每次执行汉化注入前，工具会自动对原生 `app.asar` 进行备份（保存为 `app.asar.bak`），确保任何情况下都能无损一键还原官方状态。
+
+---
+
+## 🙏 鸣谢 (Acknowledgements)
+
+本项目在词库建设与生态探索过程中，参考并吸收了社区优秀开源项目的贡献：
+- [Antigravity-Chinese-Localization](https://github.com/liominsb/Antigravity-Chinese-Localization) (基于 MIT 协议) - 感谢原作者对 Antigravity 汉化生态做出的早期探索与词条贡献。
+
+---
+
+## 📄 开源许可证
+
+本项目基于 [MIT License](LICENSE) 开源。
+
