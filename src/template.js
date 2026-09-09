@@ -100,9 +100,61 @@ ${INJECTION_MARKER}
     return text;
   }
 
+  // 免疫检测：判断节点是否处于可编辑区域、输入框或代码块中
+  function isIgnoredNode(node) {
+    if (!node) return false;
+    let el = node.nodeType === 1 ? node : node.parentElement;
+    if (!el) return false;
+
+    while (el && el !== document.body) {
+      // 1. 占位提示元素例外：若显式包含 placeholder，不跳过
+      const className = typeof el.className === 'string' ? el.className : (el.className && el.className.baseVal ? el.className.baseVal : '');
+      if (className && className.toLowerCase().includes('placeholder')) {
+        return false;
+      }
+
+      // 2. 常见不可翻译标签（脚本、样式、输入控件、代码块）
+      const tag = el.tagName ? el.tagName.toUpperCase() : '';
+      if (['INPUT', 'TEXTAREA', 'SCRIPT', 'STYLE', 'CODE', 'PRE'].includes(tag)) {
+        return true;
+      }
+
+      // 3. 富文本可编辑区（聊天输入框 contenteditable="true" 或包含 isContentEditable）
+      if (el.isContentEditable || (el.getAttribute && (el.getAttribute('contenteditable') === 'true' || el.getAttribute('contenteditable') === ''))) {
+        return true;
+      }
+
+      // 4. 无障碍可编辑区域
+      if (el.getAttribute && el.getAttribute('role') === 'textbox') {
+        return true;
+      }
+
+      // 5. Monaco 代码编辑器、终端控制台及代码行
+      if (className) {
+        const lowerClass = className.toLowerCase();
+        if (
+          lowerClass.includes('monaco-editor') ||
+          lowerClass.includes('view-lines') ||
+          lowerClass.includes('view-line') ||
+          lowerClass.includes('xterm') ||
+          lowerClass.includes('terminal')
+        ) {
+          return true;
+        }
+      }
+
+      el = el.parentElement || (el.parentNode && el.parentNode.host ? el.parentNode.host : null);
+    }
+    return false;
+  }
+
   function translateNode(node) {
     if (!node) return;
+
     if (node.nodeType === 3) { // 文本节点
+      // 如果属于输入区、代码区，严格禁止翻译
+      if (isIgnoredNode(node)) return;
+
       const val = node.nodeValue;
       if (val) {
         const newVal = translateText(val);
@@ -111,9 +163,7 @@ ${INJECTION_MARKER}
         }
       }
     } else if (node.nodeType === 1) { // 元素节点
-      const tag = node.tagName ? node.tagName.toUpperCase() : '';
-      if (['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT'].includes(tag)) return;
-
+      // 先翻译 placeholder 与 title 属性（这些是 UI 提示信息）
       if (node.placeholder) {
         const newPh = translateText(node.placeholder);
         if (newPh !== node.placeholder) {
@@ -126,6 +176,9 @@ ${INJECTION_MARKER}
           node.title = newTitle;
         }
       }
+
+      // 如果当前元素本身属于输入框、编辑区或代码块，严禁进入其子节点进行翻译
+      if (isIgnoredNode(node)) return;
 
       if (node.childNodes) {
         for (let i = 0; i < node.childNodes.length; i++) {
@@ -155,7 +208,9 @@ ${INJECTION_MARKER}
             translateNode(m.addedNodes[j]);
           }
         } else if (m.type === 'characterData') {
-          translateNode(m.target);
+          if (!isIgnoredNode(m.target)) {
+            translateNode(m.target);
+          }
         }
       }
     });

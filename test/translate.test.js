@@ -57,6 +57,7 @@ function 测试_注入模板代码生成有效性() {
   assert.ok(script.includes('"New Conversation": "新建对话"'), '生成的脚本中必须内嵌字典内容');
   assert.ok(script.includes('MutationObserver'), '生成的脚本必须包含 DOM 监听引擎');
   assert.ok(script.includes('translateText'), '生成的脚本必须包含严格匹配转换函数');
+  assert.ok(script.includes('isIgnoredNode'), '生成的脚本必须包含输入框与代码编辑区免疫过滤函数');
   console.log('  ✔ [测试_注入模板代码生成有效性] 通过');
 }
 
