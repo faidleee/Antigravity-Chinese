@@ -84,7 +84,10 @@ function 测试_动态模式与高频界面词条匹配() {
     'global settings', 'General settings', 'Learn more', 'Inherits your',
     'Rename', 'Mark Read', 'Delete', 'Copy', 'Split',
     'Conversation Name', 'Conversation ID', 'Project Name',
-    'Split Right', 'Split Down'
+    'Split Right', 'Split Down',
+    'Agent settings and permissions for conversations outside of projects.',
+    'Install Antigravity IDE to run and edit your workspace scripts.',
+    'Replace With New', 'Pin', 'Archive', 'Describe the bug you encountered...'
   ];
 
   for (const term of requiredTerms) {
