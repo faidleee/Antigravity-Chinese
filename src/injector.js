@@ -7,18 +7,6 @@ const path = require('path');
 const { getAntigravityPaths } = require('./config');
 const { INJECTION_MARKER, generateInjectionScript } = require('./template');
 
-function closeRunningApp() {
-  try {
-    if (process.platform === 'win32') {
-      const output = execSync('tasklist', { encoding: 'utf8' }).toLowerCase();
-      if (output.includes('antigravity.exe')) {
-        console.log('[Antigravity-Chinese] 检测到 Antigravity 正在运行，正在自动退出以解除文件占用...');
-        try { execSync('taskkill /F /IM Antigravity.exe', { stdio: 'ignore' }); } catch (e) {}
-      }
-    }
-  } catch (e) {}
-}
-
 function installPatch(customDictPath) {
   const paths = getAntigravityPaths();
 
@@ -34,9 +22,6 @@ function installPatch(customDictPath) {
   if (!fs.existsSync(dictFile)) {
     throw new Error(`未找到汉化字典文件：${dictFile}`);
   }
-
-  // 确保进程解除占用
-  closeRunningApp();
 
   const dictionary = JSON.parse(fs.readFileSync(dictFile, 'utf8'));
   const termCount = Object.keys(dictionary).length;

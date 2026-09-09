@@ -80,7 +80,10 @@ function 测试_动态模式与高频界面词条匹配() {
     'Commands', 'See less', 'Inherits your General settings when working in this project.',
     'Allow', 'Deny', 'Always Allow', 'Always Deny', 'Ask', 'Block',
     'Also includes global settings when working in this project. Learn more.',
-    'global settings', 'General settings', 'Learn more', 'Inherits your'
+    'global settings', 'General settings', 'Learn more', 'Inherits your',
+    'Rename', 'Mark Read', 'Delete', 'Copy', 'Split',
+    'Conversation Name', 'Conversation ID', 'Project Name',
+    'Split Right', 'Split Down'
   ];
 
   for (const term of requiredTerms) {

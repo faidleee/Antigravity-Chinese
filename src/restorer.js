@@ -7,27 +7,12 @@ const path = require('path');
 const { getAntigravityPaths } = require('./config');
 const { INJECTION_MARKER } = require('./template');
 
-function closeRunningApp() {
-  try {
-    if (process.platform === 'win32') {
-      const output = execSync('tasklist', { encoding: 'utf8' }).toLowerCase();
-      if (output.includes('antigravity.exe')) {
-        console.log('[Antigravity-Chinese] 检测到 Antigravity 正在运行，正在自动退出以解除文件占用...');
-        try { execSync('taskkill /F /IM Antigravity.exe', { stdio: 'ignore' }); } catch (e) {}
-      }
-    }
-  } catch (e) {}
-}
-
 function restoreOriginal() {
   const paths = getAntigravityPaths();
 
   if (!paths.hasAsar) {
     throw new Error(`未找到目标核心包 app.asar：${paths.asarPath}`);
   }
-
-  // 确保进程解除占用
-  closeRunningApp();
 
   // 模式 1：如果存在原生备份且备份未被打补丁，直接还原备份
   if (paths.hasBackup) {
