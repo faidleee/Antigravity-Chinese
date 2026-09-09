@@ -4,13 +4,13 @@
 
 ---
 
-## 🌟 核心特性
+## 特性
 
-- **740+ 高频词条全量覆盖**：全量汉化菜单导航、系统偏好设置、Agent 行为规则、模型配额与额度、安全沙盒与权限策略、官方插件生态等核心文案。
-- **纯本地运行，零端口占用**：摒弃后台常驻 Web 服务，双击批处理脚本 2 秒极速完成解包注入与封装，干净纯粹。
-- **复合动态模式匹配**：内置独创的动态正则引擎，完美解决 `Files Changed 17 v`、`Ran 3 commands >`、`Worked for 51s` 等带数字徽章及折叠箭头的 DOM 难题。
-- **防进程占用与安全备份**：注入前自动解除进程占用，首次运行自动创建官方纯正 `app.asar.bak` 备份，支持随时一键无损还原原生英文版。
-- **独立 JSON 字典与测试护航**：数据与逻辑完全解耦，字典采用标准 `data/dict.json` 便于社区贡献 PR，配套 6 组自动化单元测试保障代码质量。
+- **词条覆盖**：收录 740+ 界面词条，涵盖菜单导航、设置面板、Agent 行为规则、模型配额与安全沙盒策略。
+- **动态模式匹配**：支持带数字徽章、状态参数与折叠箭头的动态文本匹配（如 `Files Changed 17 v`、`Ran 3 commands >`、`Worked for 51s`）。
+- **进程管理与备份**：操作前自动退出运行中的应用以避免文件占用；首次注入自动备份原版（`app.asar.bak`），支持一键还原。
+- **数据解耦与测试**：字典独立于 `data/dict.json`，便于扩展维护；配套自动化单元测试校验字典有效性与模板生成。
+- **纯本地运行**：脚本直接解包与注入，不依赖后台服务及网络端口。
 
 ---
 
@@ -21,15 +21,15 @@ antigravity-chinese/
 ├── README.md                      # 项目说明与使用指南
 ├── LICENSE                        # MIT 开源许可证
 ├── package.json                   # Node.js 项目配置清单
-├── install.bat                    # Windows 用户双击一键安装/更新汉化
-├── restore.bat                    # Windows 用户双击一键还原官方英文原版
+├── install.bat                    # Windows 用户双击安装/更新补丁
+├── restore.bat                    # Windows 用户双击还原官方英文原版
 ├── data\
-│   └── dict.json                  # 标准化汉化字典 (740+ 精准词条)
+│   └── dict.json                  # 汉化字典 (740+ 词条)
 ├── src\
-│   ├── config.js                  # 安装路径自动定位与探测
-│   ├── template.js                # 预加载注入脚本与动态正则生成引擎
-│   ├── injector.js                # 解包、补丁追加与重包流水线
-│   ├── restorer.js                # 官方原生备份无损还原器
+│   ├── config.js                  # 路径定位与探测
+│   ├── template.js                # 预加载注入脚本生成器
+│   ├── injector.js                # 解包注入与打包
+│   ├── restorer.js                # 官方原版还原器
 │   └── cli.js                     # 命令行管理入口
 └── test\
     └── translate.test.js          # 自动化单元测试套件
@@ -40,26 +40,38 @@ antigravity-chinese/
 ## 🚀 快速上手
 
 ### 1. 安装 / 更新汉化补丁
-双击运行项目根目录下的 **`install.bat`**。  
-或者在终端中运行：
+双击运行根目录下的 **`install.bat`**，或在终端运行：
 ```bash
 npm start
-# 或
-node src/cli.js install
+# 或 node src/cli.js install
 ```
 
 ### 2. 还原官方英文原版
-双击运行项目根目录下的 **`restore.bat`**。  
-或者在终端中运行：
+双击运行根目录下的 **`restore.bat`**，或在终端运行：
 ```bash
 npm run restore
-# 或
-node src/cli.js restore
+# 或 node src/cli.js restore
 ```
 
 ### 3. 执行单元测试
 ```bash
 npm test
+```
+
+---
+
+## ⚙️ 路径配置
+
+脚本默认自动识别官方安装路径：
+- Windows: `%LOCALAPPDATA%\Programs\antigravity` (`C:\Users\<用户名>\AppData\Local\Programs\antigravity`)
+
+若安装在自定义目录，可通过设置环境变量 `ANTIGRAVITY_HOME` 指定路径：
+```bash
+# Windows CMD
+set ANTIGRAVITY_HOME=D:\Software\antigravity
+
+# PowerShell
+$env:ANTIGRAVITY_HOME="D:\Software\antigravity"
 ```
 
 ---
