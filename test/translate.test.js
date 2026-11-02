@@ -87,7 +87,10 @@ function 测试_动态模式与高频界面词条匹配() {
     'Split Right', 'Split Down',
     'Agent settings and permissions for conversations outside of projects.',
     'Install Antigravity IDE to run and edit your workspace scripts.',
-    'Replace With New', 'Pin', 'Archive', 'Describe the bug you encountered...'
+    'Replace With New', 'Pin', 'Archive', 'Describe the bug you encountered...',
+    'Built-in Browser', 'External Browser', 'Open Links In',
+    'Configure link opening and built-in browser preferences.',
+    'Choose where links open by default when clicked.'
   ];
 
   for (const term of requiredTerms) {
@@ -219,6 +222,24 @@ function 测试_用户对话气泡与思考链免疫() {
   console.log('  ✔ [测试_用户对话气泡与思考链免疫] 通过 (气泡/输入框保护与 UI 汉化验证全部合格)');
 }
 
+function 测试_安全预设描述与全局设置词条覆盖() {
+  const dictPath = path.join(__dirname, '..', 'data', 'dict.json');
+  const dict = JSON.parse(fs.readFileSync(dictPath, 'utf8'));
+
+  const securityTerms = [
+    'Every command requires approval.',
+    'Ask before sensitive operations.',
+    'Run all commands without restrictions.',
+    'Use Global Settings'
+  ];
+
+  for (const term of securityTerms) {
+    assert.ok(dict[term], `字典中必须包含安全预设相关词条: "${term}"`);
+    assert.ok(dict[term].length > 0, `词条 "${term}" 的中文翻译不能为空`);
+  }
+  console.log('  ✔ [测试_安全预设描述与全局设置词条覆盖] 通过');
+}
+
 // 执行所有测试函数
 function 运行全部测试() {
   console.log('\n--- 开始执行 TranslateGemini 自动化单元测试 ---');
@@ -230,7 +251,8 @@ function 运行全部测试() {
     测试_注入模板代码生成有效性,
     测试_命令行执行环境自检,
     测试_动态模式与高频界面词条匹配,
-    测试_用户对话气泡与思考链免疫
+    测试_用户对话气泡与思考链免疫,
+    测试_安全预设描述与全局设置词条覆盖
   ];
 
   for (const testFn of testSuite) {
