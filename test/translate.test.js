@@ -90,7 +90,13 @@ function 测试_动态模式与高频界面词条匹配() {
     'Replace With New', 'Pin', 'Archive', 'Describe the bug you encountered...',
     'Built-in Browser', 'External Browser', 'Open Links In',
     'Configure link opening and built-in browser preferences.',
-    'Choose where links open by default when clicked.'
+    'Choose where links open by default when clicked.',
+    'Interface Layout', 'Knowledge Work', 'Software Engineering',
+    'Global Permissions', 'Permission Preset', 'Turbo', 'Plan Review Policy',
+    'Conversation Steps', 'Verbose', 'Contrast', 'Strong', 'Font',
+    'Enable Notifications for Agent', 'Sound', 'Enable Sounds for Agent', 'Volume',
+    'Download Location', 'Change...', 'Browsing History', 'Clear', 'Browser Subagent',
+    'Configure allowed and denied URLs for the browser subagent (invoked with /browser). Requires'
   ];
 
   for (const term of requiredTerms) {
@@ -240,6 +246,96 @@ function 测试_安全预设描述与全局设置词条覆盖() {
   console.log('  ✔ [测试_安全预设描述与全局设置词条覆盖] 通过');
 }
 
+function 测试_混排上下文与防误伤翻译() {
+  const vm = require('vm');
+  const dictPath = path.join(__dirname, '..', 'data', 'dict.json');
+  const dict = JSON.parse(fs.readFileSync(dictPath, 'utf8'));
+  const script = generateInjectionScript(dict);
+
+  function 创建模拟元素(tagName, attrs = {}, classes = [], parent = null) {
+    const el = {
+      nodeType: 1,
+      tagName: tagName.toUpperCase(),
+      attributes: { ...attrs },
+      classList: {
+        contains: (cls) => classes.includes(cls)
+      },
+      className: classes.join(' '),
+      parentElement: parent,
+      childNodes: [],
+      getAttribute: (attr) => attrs[attr] || null,
+      hasAttribute: (attr) => Boolean(attrs[attr]),
+      setAttribute: (attr, val) => { attrs[attr] = val; }
+    };
+    if (parent && parent.childNodes) {
+      parent.childNodes.push(el);
+    }
+    return el;
+  }
+
+  function 创建模拟文本节点(text, parent = null) {
+    const node = {
+      nodeType: 3,
+      nodeValue: text,
+      parentElement: parent
+    };
+    if (parent && parent.childNodes) {
+      parent.childNodes.push(node);
+    }
+    return node;
+  }
+
+  const mockDocument = {
+    body: 创建模拟元素('body', {}, []),
+    readyState: 'complete',
+    addEventListener: () => {}
+  };
+  const mockWindow = {
+    document: mockDocument,
+    MutationObserver: class {
+      observe() {}
+    }
+  };
+
+  const context = vm.createContext({
+    window: mockWindow,
+    document: mockDocument,
+    MutationObserver: mockWindow.MutationObserver,
+    WeakMap: WeakMap,
+    WeakSet: WeakSet,
+    Set: Set,
+    RegExp: RegExp
+  });
+
+  vm.runInContext(script, context);
+  const sandboxTranslate = mockWindow.__antigravity_translate_node__;
+
+  // 场景 1：混排句 "Type / and select plan to have the agent generate a plan."
+  const p = 创建模拟元素('p', {}, [], mockDocument.body);
+  const t1 = 创建模拟文本节点('Type ', p);
+  const codeSlash = 创建模拟元素('code', {}, [], p);
+  const tSlash = 创建模拟文本节点('/', codeSlash);
+  const t2 = 创建模拟文本节点(' and select ', p);
+  const codePlan = 创建模拟元素('code', {}, [], p);
+  const tPlan = 创建模拟文本节点('plan', codePlan);
+  const t3 = 创建模拟文本节点(' to have the agent generate a plan.', p);
+  sandboxTranslate(p);
+
+  assert.strictEqual(t1.nodeValue, '输入 ', '混排句前置 "Type " 应上下文翻译为 "输入 "');
+  assert.strictEqual(tSlash.nodeValue, '/', '代码块 "/" 应保留原样');
+  assert.strictEqual(t2.nodeValue, ' 并选择 ', '混排中间连接词应翻译为 " 并选择 "');
+  assert.strictEqual(tPlan.nodeValue, 'plan', '代码块 "plan" 应保留原样');
+  assert.strictEqual(t3.nodeValue, ' 让 Agent 生成计划。', '混排句后半段应翻译为 " 让 Agent 生成计划。"');
+
+  // 场景 2：独立的 "Type" 表头不被误翻成 "输入"
+  const th = 创建模拟元素('th', {}, [], mockDocument.body);
+  const thText = 创建模拟文本节点('Type', th);
+  sandboxTranslate(th);
+  assert.strictEqual(thText.nodeValue, 'Type', '独立的 "Type" 标签不应被误翻成 "输入"');
+
+  console.log('  ✔ [测试_混排上下文与防误伤翻译] 通过');
+}
+
 // 执行所有测试函数
 function 运行全部测试() {
   console.log('\n--- 开始执行 TranslateGemini 自动化单元测试 ---');
@@ -252,7 +348,8 @@ function 运行全部测试() {
     测试_命令行执行环境自检,
     测试_动态模式与高频界面词条匹配,
     测试_用户对话气泡与思考链免疫,
-    测试_安全预设描述与全局设置词条覆盖
+    测试_安全预设描述与全局设置词条覆盖,
+    测试_混排上下文与防误伤翻译
   ];
 
   for (const testFn of testSuite) {

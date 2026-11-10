@@ -274,7 +274,18 @@ ${INJECTION_MARKER}
       if (translatedNodes.has(node)) return;
       const val = node.nodeValue;
       if (val) {
-        const newVal = translateText(val);
+        let newVal = translateText(val);
+        // 上下文特判：仅在斜杠命令提示句中将前置 "Type" 译为 "输入"，避免误伤独立的 "Type"（类型）标签
+        if (newVal === val && val.trim() === 'Type' && node.parentElement) {
+          const getElText = (el) => el.textContent || (el.childNodes ? Array.from(el.childNodes).map(c => c.nodeValue || c.textContent || '').join('') : '');
+          let ctxText = getElText(node.parentElement);
+          if (!/and select|并选择|generate a plan|生成计划/i.test(ctxText) && node.parentElement.parentElement) {
+            ctxText = getElText(node.parentElement.parentElement);
+          }
+          if (/and select|并选择|generate a plan|生成计划/i.test(ctxText)) {
+            newVal = val.replace('Type', '输入');
+          }
+        }
         if (newVal !== val) {
           node.nodeValue = newVal;
           translatedNodes.add(node);
